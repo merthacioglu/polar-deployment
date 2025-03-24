@@ -1,23 +1,41 @@
 version: "3.8"
 services:
+    polar-postgres-catalog:
+        image: "postgres:13.4"
+        container_name: "polar-postgres-catalog"
+        ports:
+        - 5432:5432
+        environment:
+            - POSTGRES_USER=user
+            - POSTGRES_PASSWORD=password
+            - POSTGRES_DB=polardb_catalog
+    config-server:
+        image: "mhacioglu/config-server:0.0.1-SNAPSHOT"
+        container_name: "config-server"
+        ports:
+        - 8888:8888
+        - 9888:9888
+        environment:
+        # Buildpacks environment variable to configure the number of threads in memory calculation
+            - BPL_JVM_THREAD_COUNT=50
+        # Buildpacks environment variable to enable debug through a socket on port 9888
+            - BPL_DEBUG_ENABLED=true
+            - BPL_DEBUG_PORT=9888
+            - SPRING_CLOUD_CONFIG_SERVER_GIT_BASEDIR=/tmp/git-repo
 
-	polar-postgres-catalog:
-		image: "postgres: 13.4"
-		container name: "polar-postgres-catalog"
-		ports:
-			- 5432:5432
-		environment:
-			- POSTGRES_USER=user
-			- POSTGRES_PASSWORD=password
-			- POSTGRES_DB=polardb_catalog
 
-	catalog-service:
-		depends_on:
-			- polar-postgres-catalog
-		image: "mhacioglu/catalog-service:0.0.1-SNAPSHOT"
-		container_name: "catalog-service"
-		ports:
-			- 9001:9001
-		environment:
-			- BPL_JAVA_THREAD_COUNT=50
-			- SPRING_DATA_SOURCE_URL=postgresql://polar-postgres-catalog:5432/polardb_catalog
+    catalog-service:
+        depends_on:
+            - polar-postgres-catalog
+            - config-server
+        image: "mhacioglu/catalog-service:0.0.2-SNAPSHOT"
+        container_name: "catalog-service"
+        ports:
+        - 9001:9001
+        - 8001:8001
+        environment:
+            - BPL_JVM_THREAD_COUNT=50
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres-catalog:5432/polardb_catalog
+            - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+            - BPL_DEBUG_ENABLED=true
+            - BPL_DEBUG_PORT=8001
