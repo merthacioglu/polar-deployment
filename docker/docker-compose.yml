@@ -9,6 +9,17 @@ services:
             - POSTGRES_USER=user
             - POSTGRES_PASSWORD=password
             - POSTGRES_DB=polardb_catalog
+
+    polar-postgres-order:
+        image: "postgres:13.4"
+        container_name: "polar-postgres-order"
+        ports:
+        - "5433:5432"
+        environment:
+            POSTGRES_USER: user
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: polardb_order
+            
     config-server:
         image: "mhacioglu/config-server:0.0.1-SNAPSHOT"
         container_name: "config-server"
